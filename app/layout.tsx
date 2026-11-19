@@ -4,6 +4,7 @@ import "./globals.css"
 import { switzer, zodiak } from "./fonts"
 import { Navbar } from "@/components/navbar"
 import { ThemeProvider } from "@/components/theme-provider"
+import { Toaster } from "@/components/ui/toast"
 import { cn } from "@/lib/utils";
 
 const fontMono = Geist_Mono({
@@ -31,6 +32,7 @@ export default function RootLayout({
         <ThemeProvider>
           <Navbar />
           {children}
+          <Toaster />
         </ThemeProvider>
       </body>
     </html>

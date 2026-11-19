@@ -23,6 +23,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { authClient } from "@/lib/auth-client"
+import { getDashboardPath, getRole } from "@/lib/auth-redirect"
 import { cn } from "@/lib/utils"
 
 type NavLink = {
@@ -37,11 +38,7 @@ const publicLinks: NavLink[] = [
   // { href: "/sign-up", label: "Sign Up" },
 ]
 
-const authenticatedLinks: NavLink[] = [
-  { href: "/", label: "Home" },
-  { href: "/salons/1", label: "Salon Details" },
-  { href: "/dashboard", label: "Dashboard" },
-]
+
 
 function initialsFor(name: string) {
   return name
@@ -61,9 +58,15 @@ export function Navbar() {
   const { data: session, isPending } = authClient.useSession()
 
   const user = session?.user
-  const rawRole = (user as unknown as { role?: unknown } | undefined)?.role
-  const role = typeof rawRole === "string" && rawRole.length > 0 ? rawRole : undefined
-  const links = user ? authenticatedLinks : publicLinks
+  const role = user ? getRole(user) : undefined
+  const dashboardHref = user ? getDashboardPath(user) : "/dashboard"
+  const links: NavLink[] = user
+    ? [
+        { href: "/", label: "Home" },
+        { href: "/salons/1", label: "Salon Details" },
+        { href: dashboardHref, label: "Dashboard" },
+      ]
+    : publicLinks
 
   const isActive = (href: string) =>
     href === "/" ? pathname === "/" : pathname.startsWith(href)
@@ -126,7 +129,7 @@ export function Navbar() {
                   )}
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={() => router.push("/dashboard")}>
+                <DropdownMenuItem onClick={() => router.push(dashboardHref)}>
                   <LayoutDashboard />
                   Dashboard
                 </DropdownMenuItem>
@@ -141,15 +144,15 @@ export function Navbar() {
             <div className="hidden items-center gap-2 md:flex">
               <Link
                 href="/sign-in"
-                className={buttonVariants({ variant: "ghost", size: "sm" })}
+                className={buttonVariants({ variant: "ghost", size: "lg" })}
               >
-                Sign In
+                Login
               </Link>
               <Link
                 href="/sign-up"
-                className={buttonVariants({ size: "sm" })}
+                className={buttonVariants({ size: "lg" })}
               >
-                Sign Up
+                Register
               </Link>
             </div>
           )}
@@ -186,7 +189,7 @@ export function Navbar() {
               </Link>
             ))}
 
-            {user && (
+            {user ? (
               <>
                 <div className="mt-2 border-t pt-3">
                   <p className="px-3 text-sm font-medium">{user.name}</p>
@@ -206,6 +209,25 @@ export function Navbar() {
                   Logout
                 </button>
               </>
+            ) : (
+              !isPending && (
+                <div className="mt-2 grid grid-cols-2 gap-2 border-t pt-3">
+                  <Link
+                    href="/sign-in"
+                    onClick={() => setMobileOpen(false)}
+                    className={buttonVariants({ variant: "outline", size: "lg" })}
+                  >
+                    Login
+                  </Link>
+                  <Link
+                    href="/sign-up"
+                    onClick={() => setMobileOpen(false)}
+                    className={buttonVariants({ size: "lg" })}
+                  >
+                    Register
+                  </Link>
+                </div>
+              )
             )}
           </div>
         </nav>

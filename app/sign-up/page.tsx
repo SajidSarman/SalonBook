@@ -1,10 +1,19 @@
+import type { Metadata } from "next"
+
+import { AuthShell } from "@/components/auth/auth-shell"
+import { SignUpForm } from "@/components/auth/sign-up-form"
+
+export const metadata: Metadata = {
+  title: "Create account | SalonBook",
+}
+
 export default function SignUpPage() {
   return (
-    <main className="mx-auto flex min-h-[calc(100svh-4rem)] max-w-6xl flex-col gap-2 px-6 py-16">
-      <h1 className="font-heading text-3xl font-semibold">Sign Up</h1>
-      <p className="text-muted-foreground">
-        Placeholder page for the sign-up form.
-      </p>
-    </main>
+    <AuthShell
+      title="Create your account"
+      subtitle="Join SalonBook to book and host salon spaces."
+    >
+      <SignUpForm />
+    </AuthShell>
   )
 }

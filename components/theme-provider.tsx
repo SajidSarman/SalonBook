@@ -47,7 +47,9 @@ function ThemeHotkey() {
         return
       }
 
-      if (event.key.toLowerCase() !== "d") {
+      // Some extensions, IMEs and synthetic `Event("keydown")` dispatches send
+      // events without a `key`, which would throw on `.toLowerCase()`.
+      if (typeof event.key !== "string" || event.key.toLowerCase() !== "d") {
         return
       }
 

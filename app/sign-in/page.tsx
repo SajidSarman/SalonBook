@@ -1,10 +1,20 @@
+import type { Metadata } from "next"
+import Link from "next/link"
+
+import { AuthShell } from "@/components/auth/auth-shell"
+import { SignInForm } from "@/components/auth/sign-in-form"
+
+export const metadata: Metadata = {
+  title: "Log in | SalonBook",
+}
+
 export default function SignInPage() {
   return (
-    <main className="mx-auto flex min-h-[calc(100svh-4rem)] max-w-6xl flex-col gap-2 px-6 py-16">
-      <h1 className="font-heading text-3xl font-semibold">Sign In</h1>
-      <p className="text-muted-foreground">
-        Placeholder page for the sign-in form.
-      </p>
-    </main>
+    <AuthShell
+      title="Welcome back"
+      subtitle="Log in to book and host salon spaces."
+    >
+      <SignInForm />
+    </AuthShell>
   )
 }
