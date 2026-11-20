@@ -15,7 +15,7 @@ export function AuthShell({
   // auth page never adds a scrollbar.
   return (
     <main className="grid min-h-[calc(100svh_-_4rem_-_1px)] md:grid-cols-2">
-      <section className="dark flex flex-col justify-center bg-background px-4 py-6 text-foreground sm:px-8">
+      <section className="dark flex flex-col justify-center bg-background px-4 py-4 text-foreground sm:px-8">
         <div className="mx-auto w-full max-w-sm">
           <h1 className="text-center font-heading text-2xl font-semibold tracking-tight sm:text-3xl">
             {title}
@@ -23,7 +23,7 @@ export function AuthShell({
           <p className="mt-2 text-center text-sm text-muted-foreground">
             {subtitle}
           </p>
-          <div className="mt-5">{children}</div>
+          <div className="mt-4">{children}</div>
         </div>
       </section>
 

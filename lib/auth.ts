@@ -5,7 +5,7 @@ import { mongodbAdapter } from "@better-auth/mongo-adapter";
 
 import { validatePassword } from "./password";
 
-const client = new MongoClient("mongodb://localhost:27017/database");
+const client = new MongoClient(process.env.MONGODB_URI as string);
 const db = client.db("SalonBook_DB");
 
 export const auth = betterAuth({

@@ -27,12 +27,24 @@ function validateImageUrl(value: string) {
   }
 }
 
+function validateEmail(value: string) {
+  if (!value.trim()) {
+    return "Please enter your email address."
+  }
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value.trim())) {
+    return "Please enter a valid email address."
+  }
+  return null
+}
+
 export function SignUpForm() {
   const router = useRouter()
   const [name, setName] = React.useState("")
   const [imageUrl, setImageUrl] = React.useState("")
   const [email, setEmail] = React.useState("")
+  const [emailError, setEmailError] = React.useState<string | null>(null)
   const [password, setPassword] = React.useState("")
+  const [passwordError, setPasswordError] = React.useState<string | null>(null)
   const [loading, setLoading] = React.useState(false)
   const [googleLoading, setGoogleLoading] = React.useState(false)
 
@@ -48,22 +60,12 @@ export function SignUpForm() {
       return
     }
 
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
-      toast.add({
-        type: "error",
-        title: "Invalid email",
-        description: "Please enter a valid email address.",
-      })
-      return
-    }
-
-    const passwordError = validatePassword(password)
-    if (passwordError) {
-      toast.add({
-        type: "error",
-        title: "Invalid password",
-        description: passwordError,
-      })
+    const emailValidation = validateEmail(email)
+    const passwordValidation = validatePassword(password)
+    setEmailError(emailValidation)
+    setPasswordError(passwordValidation)
+    // Show both field errors at once instead of one at a time.
+    if (emailValidation || passwordValidation) {
       return
     }
 
@@ -89,9 +91,32 @@ export function SignUpForm() {
       password,
       image,
     })
+    // console.log("signup response", data, error)
 
     if (error) {
       setLoading(false)
+
+      // Email problems (bad address or already registered) belong on the
+      // email field, not in a toast.
+      if (
+        error.code === "USER_ALREADY_EXISTS" ||
+        error.code === "USER_ALREADY_EXISTS_USE_ANOTHER_EMAIL"
+      ) {
+        setEmailError(
+          error.message || "An account with this email already exists."
+        )
+        return
+      }
+
+      // The server can reject the password independently of the client checks
+      // (e.g. someone calling the API directly). Surface it on the field too.
+      if (error.code === "INVALID_PASSWORD") {
+        setPasswordError(
+          error.message || "Password does not meet the requirements."
+        )
+        return
+      }
+
       toast.add({
         type: "error",
         title: "Could not create account",
@@ -169,10 +194,25 @@ export function SignUpForm() {
           autoComplete="email"
           placeholder="jane@example.com"
           value={email}
-          onChange={(event) => setEmail(event.target.value)}
+          onChange={(event) => {
+            const value = event.target.value
+            setEmail(value)
+            // Re-check live only after the first error, so the field doesn't
+            // turn red while the user is still typing.
+            if (emailError) {
+              setEmailError(validateEmail(value))
+            }
+          }}
           disabled={busy}
           required
+          aria-invalid={emailError ? true : undefined}
+          aria-describedby={emailError ? "email-error" : undefined}
         />
+        {emailError ? (
+          <p id="email-error" className="text-xs text-destructive">
+            {emailError}
+          </p>
+        ) : null}
       </div>
 
       <div className="space-y-1.5">
@@ -182,13 +222,30 @@ export function SignUpForm() {
           autoComplete="new-password"
           placeholder="Create a password"
           value={password}
-          onChange={(event) => setPassword(event.target.value)}
+          onChange={(event) => {
+            const value = event.target.value
+            setPassword(value)
+            // Re-check live only after the first error, so the field doesn't
+            // turn red while the user is still typing a new password.
+            if (passwordError) {
+              setPasswordError(validatePassword(value))
+            }
+          }}
           disabled={busy}
           required
+          aria-invalid={passwordError ? true : undefined}
+          aria-describedby={
+            passwordError ? "password-hint password-error" : "password-hint"
+          }
         />
-        <p className="text-xs text-muted-foreground">
+        <p id="password-hint" className="text-xs text-muted-foreground">
           Use at least 6 characters, including uppercase and lowercase letters.
         </p>
+        {passwordError ? (
+          <p id="password-error" className="text-xs text-destructive">
+            {passwordError}
+          </p>
+        ) : null}
       </div>
 
       <Button
