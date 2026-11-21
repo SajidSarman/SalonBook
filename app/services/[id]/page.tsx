@@ -3,6 +3,7 @@ import Link from "next/link"
 import { ArrowLeft, Clock3 } from "lucide-react"
 import { notFound } from "next/navigation"
 
+import { AppointmentRequestForm } from "@/components/services/appointment-request-form"
 import { getActiveServiceById } from "@/lib/services"
 
 const priceFormatter = new Intl.NumberFormat("en-BD", {
@@ -44,7 +45,7 @@ export default async function ServiceDetailsPage({
           />
         </div>
         <div className="flex flex-col justify-center p-7 sm:p-10 lg:p-14">
-          <p className="text-xs font-semibold uppercase tracking-[0.22em] text-muted-foreground">
+          <p className="text-xs font-semibold tracking-[0.22em] text-muted-foreground uppercase">
             {service.category}
           </p>
           <h1 className="mt-4 font-heading text-3xl font-semibold tracking-tight sm:text-4xl">
@@ -64,6 +65,9 @@ export default async function ServiceDetailsPage({
           </div>
         </div>
       </article>
+      <div className="mt-8">
+        <AppointmentRequestForm service={service} />
+      </div>
     </main>
   )
 }
