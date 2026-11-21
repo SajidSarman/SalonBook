@@ -1,5 +1,6 @@
 import { requireRole } from "@/lib/auth-guard"
 import { AppointmentManagement } from "@/components/appointments/appointment-management"
+import { ProfileManagement } from "@/components/dashboard/profile-management"
 
 export default async function CustomerDashboardPage() {
   const session = await requireRole("customer")
@@ -13,6 +14,7 @@ export default async function CustomerDashboardPage() {
         Welcome back, {session.user.name}.
       </p>
       <AppointmentManagement role="customer" />
+      <ProfileManagement name={session.user.name} email={session.user.email} />
     </div>
   )
 }

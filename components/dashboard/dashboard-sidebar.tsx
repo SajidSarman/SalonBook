@@ -9,6 +9,7 @@ import {
   Scissors,
   Search,
   Users,
+  UserRound,
   type LucideIcon,
 } from "lucide-react"
 
@@ -51,6 +52,11 @@ const customerLinks: DashboardLink[] = [
     href: "/dashboard/customer#appointment-management-title",
     label: "My appointments",
     icon: CalendarClock,
+  },
+  {
+    href: "/dashboard/customer#profile-management-title",
+    label: "My profile",
+    icon: UserRound,
   },
   { href: "/services", label: "Browse services", icon: Search },
 ]

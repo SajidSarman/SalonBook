@@ -1,7 +1,9 @@
 "use client"
 
 import * as React from "react"
-import { CalendarClock } from "lucide-react"
+import Image from "next/image"
+import Link from "next/link"
+import { CalendarClock, CreditCard } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 
@@ -11,6 +13,8 @@ type ManagementRole = "customer" | "admin"
 type Appointment = {
   id: string
   serviceName: string
+  serviceCategory: string
+  serviceImage: string | null
   customerName: string
   customerEmail: string
   appointmentDate: string
@@ -45,6 +49,11 @@ function parseAppointments(value: unknown): Appointment[] {
     if (
       !id ||
       typeof appointment.serviceName !== "string" ||
+      (appointment.serviceCategory !== undefined &&
+        typeof appointment.serviceCategory !== "string") ||
+      (appointment.serviceImage !== undefined &&
+        appointment.serviceImage !== null &&
+        typeof appointment.serviceImage !== "string") ||
       typeof appointment.customerName !== "string" ||
       typeof appointment.customerEmail !== "string" ||
       typeof appointment.appointmentDate !== "string" ||
@@ -68,6 +77,14 @@ function parseAppointments(value: unknown): Appointment[] {
     return {
       id,
       serviceName: appointment.serviceName,
+      serviceCategory:
+        typeof appointment.serviceCategory === "string"
+          ? appointment.serviceCategory
+          : "",
+      serviceImage:
+        typeof appointment.serviceImage === "string"
+          ? appointment.serviceImage
+          : null,
       customerName: appointment.customerName,
       customerEmail: appointment.customerEmail,
       appointmentDate: appointment.appointmentDate,
@@ -108,6 +125,21 @@ export function AppointmentManagement({ role }: { role: ManagementRole }) {
 
   const endpoint =
     role === "admin" ? "/api/admin/appointments" : "/api/appointments"
+  const customerMetrics = [
+    { label: "Total requests", count: appointments.length },
+    {
+      label: "Pending",
+      count: appointments.filter((item) => item.status === "Pending").length,
+    },
+    {
+      label: "Confirmed",
+      count: appointments.filter((item) => item.status === "Confirmed").length,
+    },
+    {
+      label: "Cancelled",
+      count: appointments.filter((item) => item.status === "Cancelled").length,
+    },
+  ]
 
   React.useEffect(() => {
     let active = true
@@ -207,144 +239,223 @@ export function AppointmentManagement({ role }: { role: ManagementRole }) {
   }
 
   return (
-    <section id="appointment-management-title" className="mt-10 scroll-mt-24">
-      <div className="mb-5 flex items-center gap-3">
-        <CalendarClock className="size-5" />
-        <h2 className="font-heading text-2xl font-semibold">
-          {role === "admin" ? "Appointment requests" : "Your appointments"}
-        </h2>
-      </div>
-
-      {error && (
-        <p
-          role="alert"
-          className="mb-4 rounded-xl bg-destructive/10 p-4 text-sm text-destructive"
+    <>
+      {role === "customer" && (
+        <section
+          id="customer-overview"
+          className="mt-8 scroll-mt-24"
+          aria-labelledby="customer-overview-title"
         >
-          {error}
-        </p>
+          <h2
+            id="customer-overview-title"
+            className="mb-4 font-heading text-2xl font-semibold"
+          >
+            Dashboard Overview
+          </h2>
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            {customerMetrics.map(({ label, count }) => (
+              <article key={label} className="rounded-2xl border bg-card p-5">
+                <p className="text-sm text-muted-foreground">{label}</p>
+                <p className="mt-2 text-3xl font-semibold">
+                  {loading || error ? "—" : count.toLocaleString()}
+                </p>
+              </article>
+            ))}
+          </div>
+        </section>
       )}
-      {notice && (
-        <p role="status" className="mb-4 rounded-xl bg-muted p-4 text-sm">
-          {notice}
-        </p>
-      )}
-
-      {loading ? (
-        <p className="text-sm text-muted-foreground">Loading appointments…</p>
-      ) : appointments.length === 0 ? (
-        <p className="rounded-2xl border border-dashed p-8 text-sm text-muted-foreground">
-          No appointment requests yet.
-        </p>
-      ) : (
-        <div className="grid gap-4">
-          {appointments.map((appointment) => (
-            <article
-              key={appointment.id}
-              className="rounded-2xl border bg-card p-5 sm:p-6"
-            >
-              <div className="flex flex-wrap items-start justify-between gap-4">
-                <div>
-                  <h3 className="font-heading text-lg font-semibold">
-                    {appointment.serviceName}
-                  </h3>
-                  {appointment.servicePrice !== null && (
-                    <p className="mt-1 text-sm font-medium">
-                      Service price:{" "}
-                      {new Intl.NumberFormat("en-BD", {
-                        style: "currency",
-                        currency: "BDT",
-                        maximumFractionDigits: 2,
-                      }).format(appointment.servicePrice)}
-                    </p>
-                  )}
-                  <p className="mt-1 text-sm text-muted-foreground">
-                    {new Date(
-                      `${appointment.appointmentDate}T00:00:00`
-                    ).toLocaleDateString()}{" "}
-                    · {displayTime(appointment.timeSlot)}
-                  </p>
-                  {role === "admin" && appointment.createdAt && (
-                    <p className="mt-1 text-sm text-muted-foreground">
-                      Booking requested:{" "}
-                      {new Date(appointment.createdAt).toLocaleString()}
-                    </p>
-                  )}
-                  {role === "admin" && (
-                    <p className="mt-2 text-sm text-muted-foreground">
-                      {appointment.customerName} · {appointment.customerEmail}
-                    </p>
-                  )}
-                  {appointment.additionalMessage && (
-                    <p className="mt-3 text-sm">
-                      “{appointment.additionalMessage}”
-                    </p>
-                  )}
-                </div>
-                <div className="flex flex-wrap gap-2 text-xs">
-                  <span className="rounded-full bg-muted px-3 py-1">
-                    {appointment.status}
-                  </span>
-                  <span className="rounded-full bg-muted px-3 py-1">
-                    Payment: {appointment.paymentStatus}
-                  </span>
-                </div>
-              </div>
-
-              {role === "admin" && appointment.status === "Pending" && (
-                <div className="mt-5 flex gap-2 border-t pt-4">
-                  <Button
-                    size="sm"
-                    disabled={busyId === appointment.id}
-                    onClick={() =>
-                      void updateAppointment(appointment, "Confirmed")
-                    }
-                  >
-                    Confirm
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    disabled={busyId === appointment.id}
-                    onClick={() =>
-                      void updateAppointment(appointment, "Cancelled")
-                    }
-                  >
-                    Cancel
-                  </Button>
-                </div>
-              )}
-              {role === "admin" && appointment.status === "Confirmed" && (
-                <div className="mt-5 border-t pt-4">
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    disabled={busyId === appointment.id}
-                    onClick={() =>
-                      void updateAppointment(appointment, "Cancelled")
-                    }
-                  >
-                    Cancel appointment
-                  </Button>
-                </div>
-              )}
-              {role === "customer" && appointment.status === "Pending" && (
-                <div className="mt-5 border-t pt-4">
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    disabled={busyId === appointment.id}
-                    onClick={() =>
-                      void updateAppointment(appointment, "Cancelled")
-                    }
-                  >
-                    Cancel request
-                  </Button>
-                </div>
-              )}
-            </article>
-          ))}
+      <section id="appointment-management-title" className="mt-10 scroll-mt-24">
+        <div className="mb-5 flex items-center gap-3">
+          <CalendarClock className="size-5" />
+          <h2 className="font-heading text-2xl font-semibold">
+            {role === "admin" ? "Appointment requests" : "My Appointments"}
+          </h2>
         </div>
-      )}
-    </section>
+
+        {error && (
+          <p
+            role="alert"
+            className="mb-4 rounded-xl bg-destructive/10 p-4 text-sm text-destructive"
+          >
+            {error}
+          </p>
+        )}
+        {notice && (
+          <p role="status" className="mb-4 rounded-xl bg-muted p-4 text-sm">
+            {notice}
+          </p>
+        )}
+
+        {loading ? (
+          <p className="text-sm text-muted-foreground">Loading appointments…</p>
+        ) : appointments.length === 0 ? (
+          <p className="rounded-2xl border border-dashed p-8 text-sm text-muted-foreground">
+            No appointment requests yet.
+          </p>
+        ) : (
+          <div className="grid gap-4">
+            {appointments.map((appointment) => (
+              <article
+                key={appointment.id}
+                className="rounded-2xl border bg-card p-5 sm:p-6"
+              >
+                <div className="flex flex-wrap items-start justify-between gap-4">
+                  <div className="flex min-w-0 items-start gap-4">
+                    <Image
+                      src={appointment.serviceImage || "/auth-image.jpg"}
+                      alt={appointment.serviceName}
+                      width={96}
+                      height={96}
+                      unoptimized
+                      className="size-20 shrink-0 rounded-xl object-cover sm:size-24"
+                    />
+                    <div className="min-w-0">
+                      <h3 className="font-heading text-lg font-semibold">
+                        {appointment.serviceName}
+                      </h3>
+                      {appointment.serviceCategory && (
+                        <p className="mt-1 text-sm text-muted-foreground">
+                          {appointment.serviceCategory}
+                        </p>
+                      )}
+                      {appointment.servicePrice !== null && (
+                        <p className="mt-1 text-sm font-medium">
+                          Service price:{" "}
+                          {new Intl.NumberFormat("en-BD", {
+                            style: "currency",
+                            currency: "BDT",
+                            maximumFractionDigits: 2,
+                          }).format(appointment.servicePrice)}
+                        </p>
+                      )}
+                      <p className="mt-1 text-sm text-muted-foreground">
+                        {new Date(
+                          `${appointment.appointmentDate}T00:00:00`
+                        ).toLocaleDateString()}{" "}
+                        · {displayTime(appointment.timeSlot)}
+                      </p>
+                      {appointment.createdAt && (
+                        <p className="mt-1 text-sm text-muted-foreground">
+                          Booking requested:{" "}
+                          {new Date(appointment.createdAt).toLocaleString()}
+                        </p>
+                      )}
+                      {role === "admin" && (
+                        <p className="mt-2 text-sm text-muted-foreground">
+                          {appointment.customerName} ·{" "}
+                          {appointment.customerEmail}
+                        </p>
+                      )}
+                      {appointment.additionalMessage && (
+                        <p className="mt-3 text-sm">
+                          “{appointment.additionalMessage}”
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                  <div className="flex flex-wrap gap-2 text-xs">
+                    <span className="rounded-full bg-muted px-3 py-1">
+                      {appointment.status}
+                    </span>
+                    <span className="rounded-full bg-muted px-3 py-1">
+                      Payment: {appointment.paymentStatus}
+                    </span>
+                  </div>
+                </div>
+
+                {role === "admin" && appointment.status === "Pending" && (
+                  <div className="mt-5 flex gap-2 border-t pt-4">
+                    <Button
+                      size="sm"
+                      disabled={busyId === appointment.id}
+                      onClick={() =>
+                        void updateAppointment(appointment, "Confirmed")
+                      }
+                    >
+                      Confirm
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      disabled={busyId === appointment.id}
+                      onClick={() =>
+                        void updateAppointment(appointment, "Cancelled")
+                      }
+                    >
+                      Cancel
+                    </Button>
+                  </div>
+                )}
+                {role === "admin" && appointment.status === "Confirmed" && (
+                  <div className="mt-5 border-t pt-4">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      disabled={busyId === appointment.id}
+                      onClick={() =>
+                        void updateAppointment(appointment, "Cancelled")
+                      }
+                    >
+                      Cancel appointment
+                    </Button>
+                  </div>
+                )}
+                {role === "customer" && appointment.status === "Pending" && (
+                  <div className="mt-5 border-t pt-4">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      disabled={busyId === appointment.id}
+                      onClick={() =>
+                        void updateAppointment(appointment, "Cancelled")
+                      }
+                    >
+                      Cancel request
+                    </Button>
+                  </div>
+                )}
+                {role === "customer" &&
+                  appointment.status === "Confirmed" &&
+                  appointment.paymentStatus === "Unpaid" && (
+                    <div className="mt-5 border-t pt-4">
+                      <Button
+                        render={
+                          <Link
+                            href={`/dashboard/customer/appointments/${encodeURIComponent(appointment.id)}/checkout`}
+                          />
+                        }
+                        nativeButton={false}
+                        size="sm"
+                      >
+                        <CreditCard />
+                        Pay for appointment
+                      </Button>
+                    </div>
+                  )}
+                {role === "customer" && appointment.status === "Pending" && (
+                  <div className="mt-5 border-t pt-4">
+                    <Button size="sm" disabled>
+                      <CreditCard />
+                      Pay after confirmation
+                    </Button>
+                    <p className="mt-2 text-xs text-muted-foreground">
+                      Payment becomes available after an admin confirms this
+                      appointment.
+                    </p>
+                  </div>
+                )}
+                {role === "customer" &&
+                  appointment.status === "Confirmed" &&
+                  appointment.paymentStatus === "Paid" && (
+                    <p className="mt-5 border-t pt-4 text-sm text-muted-foreground">
+                      Payment completed.
+                    </p>
+                  )}
+              </article>
+            ))}
+          </div>
+        )}
+      </section>
+    </>
   )
 }
