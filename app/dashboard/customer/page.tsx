@@ -5,7 +5,7 @@ export default async function CustomerDashboardPage() {
   const session = await requireRole("customer")
 
   return (
-    <main className="mx-auto flex min-h-[calc(100svh-4rem)] max-w-6xl flex-col px-6 py-16">
+    <div className="mx-auto flex w-full max-w-6xl flex-col py-8">
       <h1 className="font-heading text-3xl font-semibold">
         Customer Dashboard
       </h1>
@@ -13,6 +13,6 @@ export default async function CustomerDashboardPage() {
         Welcome back, {session.user.name}.
       </p>
       <AppointmentManagement role="customer" />
-    </main>
+    </div>
   )
 }

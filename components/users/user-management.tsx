@@ -146,7 +146,7 @@ export function UserManagement() {
   }
 
   return (
-    <section className="mt-12">
+    <section id="user-management-title" className="mt-12 scroll-mt-24">
       <div className="mb-5 flex items-center gap-3">
         <Users className="size-5" />
         <h2 className="font-heading text-2xl font-semibold">Users</h2>

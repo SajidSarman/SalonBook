@@ -8,7 +8,7 @@ export default async function AdminDashboardPage() {
   const session = await requireRole("admin")
 
   return (
-    <main className="mx-auto flex min-h-[calc(100svh-4rem)] max-w-6xl flex-col px-6 py-16">
+    <div className="mx-auto flex w-full max-w-6xl flex-col py-8">
       <h1 className="font-heading text-3xl font-semibold">Admin Dashboard</h1>
       <p className="text-muted-foreground">Signed in as {session.user.name}.</p>
       <AdminOverview />
@@ -27,6 +27,6 @@ export default async function AdminDashboardPage() {
           integration is configured.
         </p>
       </section>
-    </main>
+    </div>
   )
 }

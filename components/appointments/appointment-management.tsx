@@ -207,7 +207,7 @@ export function AppointmentManagement({ role }: { role: ManagementRole }) {
   }
 
   return (
-    <section className="mt-10">
+    <section id="appointment-management-title" className="mt-10 scroll-mt-24">
       <div className="mb-5 flex items-center gap-3">
         <CalendarClock className="size-5" />
         <h2 className="font-heading text-2xl font-semibold">
