@@ -1,12 +1,9 @@
 import { betterAuth } from "better-auth";
 import { APIError, createAuthMiddleware } from "better-auth/api";
-import { MongoClient } from "mongodb";
 import { mongodbAdapter } from "@better-auth/mongo-adapter";
 
 import { validatePassword } from "./password";
-
-const client = new MongoClient(process.env.MONGODB_URI as string);
-const db = client.db("SalonBook_DB");
+import { client, db } from "./mongodb";
 
 export const auth = betterAuth({
   emailAndPassword: {
