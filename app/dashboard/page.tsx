@@ -13,5 +13,9 @@ export default async function DashboardPage() {
     redirect("/sign-in")
   }
 
+  if ("isBlocked" in session.user && session.user.isBlocked === true) {
+    redirect("/sign-in?blocked=1")
+  }
+
   redirect(getDashboardPath(session.user))
 }

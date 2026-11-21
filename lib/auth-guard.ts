@@ -13,6 +13,10 @@ export async function requireRole(role: UserRole) {
     redirect("/sign-in")
   }
 
+  if ("isBlocked" in session.user && session.user.isBlocked === true) {
+    redirect("/sign-in?blocked=1")
+  }
+
   if (getRole(session.user) !== role) {
     redirect("/dashboard")
   }

@@ -11,6 +11,7 @@ export function hasRole(user: unknown, role: "customer" | "admin") {
     typeof user === "object" &&
     user !== null &&
     "role" in user &&
-    user.role === role
+    user.role === role &&
+    (!("isBlocked" in user) || user.isBlocked !== true)
   )
 }
