@@ -16,6 +16,8 @@ type Appointment = {
   appointmentDate: string
   timeSlot: string
   additionalMessage: string
+  servicePrice: number | null
+  createdAt: string | null
   status: AppointmentStatus
   paymentStatus: "Unpaid" | "Paid"
 }
@@ -47,6 +49,11 @@ function parseAppointments(value: unknown): Appointment[] {
       typeof appointment.customerEmail !== "string" ||
       typeof appointment.appointmentDate !== "string" ||
       typeof appointment.timeSlot !== "string" ||
+      (appointment.servicePrice !== undefined &&
+        (typeof appointment.servicePrice !== "number" ||
+          !Number.isFinite(appointment.servicePrice))) ||
+      (appointment.createdAt !== undefined &&
+        typeof appointment.createdAt !== "string") ||
       (appointment.status !== "Pending" &&
         appointment.status !== "Confirmed" &&
         appointment.status !== "Cancelled") ||
@@ -69,6 +76,14 @@ function parseAppointments(value: unknown): Appointment[] {
         typeof appointment.additionalMessage === "string"
           ? appointment.additionalMessage
           : "",
+      servicePrice:
+        typeof appointment.servicePrice === "number"
+          ? appointment.servicePrice
+          : null,
+      createdAt:
+        typeof appointment.createdAt === "string"
+          ? appointment.createdAt
+          : null,
       status: appointment.status,
       paymentStatus: appointment.paymentStatus,
     }
@@ -232,12 +247,28 @@ export function AppointmentManagement({ role }: { role: ManagementRole }) {
                   <h3 className="font-heading text-lg font-semibold">
                     {appointment.serviceName}
                   </h3>
+                  {appointment.servicePrice !== null && (
+                    <p className="mt-1 text-sm font-medium">
+                      Service price:{" "}
+                      {new Intl.NumberFormat("en-BD", {
+                        style: "currency",
+                        currency: "BDT",
+                        maximumFractionDigits: 2,
+                      }).format(appointment.servicePrice)}
+                    </p>
+                  )}
                   <p className="mt-1 text-sm text-muted-foreground">
                     {new Date(
                       `${appointment.appointmentDate}T00:00:00`
                     ).toLocaleDateString()}{" "}
                     · {displayTime(appointment.timeSlot)}
                   </p>
+                  {role === "admin" && appointment.createdAt && (
+                    <p className="mt-1 text-sm text-muted-foreground">
+                      Booking requested:{" "}
+                      {new Date(appointment.createdAt).toLocaleString()}
+                    </p>
+                  )}
                   {role === "admin" && (
                     <p className="mt-2 text-sm text-muted-foreground">
                       {appointment.customerName} · {appointment.customerEmail}

@@ -19,7 +19,7 @@ export async function proxyToExpress(path: string, init?: RequestInit) {
   } catch (error) {
     console.error("Could not reach the Express API:", error)
     return Response.json(
-      { message: "The appointment service is unavailable." },
+      { message: "The API service is unavailable." },
       { status: 502 }
     )
   }
