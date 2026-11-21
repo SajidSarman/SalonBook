@@ -4,81 +4,12 @@ import { notFound } from "next/navigation"
 import { ArrowLeft, CreditCard } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
+import {
+  displayAppointmentTime,
+  parseAppointment,
+} from "@/lib/appointments"
 import { requireRole } from "@/lib/auth-guard"
 import { proxyToExpress } from "@/lib/express-api"
-
-type PayableAppointment = {
-  serviceName: string
-  serviceCategory: string
-  serviceImage: string | null
-  appointmentDate: string
-  timeSlot: string
-  servicePrice: number | null
-  status: "Pending" | "Confirmed" | "Cancelled"
-  paymentStatus: "Unpaid" | "Paid"
-  createdAt: string | null
-}
-
-function parseAppointment(value: unknown): PayableAppointment {
-  if (typeof value !== "object" || value === null) {
-    throw new Error("The appointment service returned an invalid response.")
-  }
-  const appointment = value as Record<string, unknown>
-  if (
-    typeof appointment.serviceName !== "string" ||
-    (appointment.serviceCategory !== undefined &&
-      typeof appointment.serviceCategory !== "string") ||
-    (appointment.serviceImage !== undefined &&
-      appointment.serviceImage !== null &&
-      typeof appointment.serviceImage !== "string") ||
-    typeof appointment.appointmentDate !== "string" ||
-    typeof appointment.timeSlot !== "string" ||
-    (appointment.servicePrice !== undefined &&
-      (typeof appointment.servicePrice !== "number" ||
-        !Number.isFinite(appointment.servicePrice))) ||
-    (appointment.status !== "Pending" &&
-      appointment.status !== "Confirmed" &&
-      appointment.status !== "Cancelled") ||
-    (appointment.paymentStatus !== "Unpaid" &&
-      appointment.paymentStatus !== "Paid") ||
-    (appointment.createdAt !== undefined &&
-      typeof appointment.createdAt !== "string")
-  ) {
-    throw new Error(
-      "The appointment service returned invalid appointment fields."
-    )
-  }
-
-  return {
-    serviceName: appointment.serviceName,
-    serviceCategory:
-      typeof appointment.serviceCategory === "string"
-        ? appointment.serviceCategory
-        : "",
-    serviceImage:
-      typeof appointment.serviceImage === "string"
-        ? appointment.serviceImage
-        : null,
-    appointmentDate: appointment.appointmentDate,
-    timeSlot: appointment.timeSlot,
-    servicePrice:
-      typeof appointment.servicePrice === "number"
-        ? appointment.servicePrice
-        : null,
-    status: appointment.status,
-    paymentStatus: appointment.paymentStatus,
-    createdAt:
-      typeof appointment.createdAt === "string" ? appointment.createdAt : null,
-  }
-}
-
-function displayTime(value: string) {
-  const [hours, minutes] = value.split(":").map(Number)
-  return new Intl.DateTimeFormat("en", {
-    hour: "numeric",
-    minute: "2-digit",
-  }).format(new Date(2000, 0, 1, hours, minutes))
-}
 
 const priceFormatter = new Intl.NumberFormat("en-BD", {
   style: "currency",
@@ -88,23 +19,14 @@ const priceFormatter = new Intl.NumberFormat("en-BD", {
 
 export default async function AppointmentPaymentPage({
   params,
-  searchParams,
 }: {
   params: Promise<{ id: string }>
-  searchParams: Promise<{ canceled?: string }>
 }) {
   const session = await requireRole("customer")
   const { id } = await params
-  const { canceled } = await searchParams
   const response = await proxyToExpress(
     `/appointments/${encodeURIComponent(id)}?customerId=${encodeURIComponent(session.user.id)}`
   )
-
-  if (canceled) {
-    console.log(
-      "Order canceled -- continue to shop around and check out when you're ready."
-    )
-  }
 
   if (response.status === 404) {
     notFound()
@@ -160,7 +82,7 @@ export default async function AppointmentPaymentPage({
                   {new Date(
                     `${appointment.appointmentDate}T00:00:00`
                   ).toLocaleDateString()}{" "}
-                  · {displayTime(appointment.timeSlot)}
+                  · {displayAppointmentTime(appointment.timeSlot)}
                 </dd>
               </div>
               <div>
