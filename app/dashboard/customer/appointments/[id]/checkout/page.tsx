@@ -88,14 +88,23 @@ const priceFormatter = new Intl.NumberFormat("en-BD", {
 
 export default async function AppointmentPaymentPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ id: string }>
+  searchParams: Promise<{ canceled?: string }>
 }) {
   const session = await requireRole("customer")
   const { id } = await params
+  const { canceled } = await searchParams
   const response = await proxyToExpress(
     `/appointments/${encodeURIComponent(id)}?customerId=${encodeURIComponent(session.user.id)}`
   )
+
+  if (canceled) {
+    console.log(
+      "Order canceled -- continue to shop around and check out when you're ready."
+    )
+  }
 
   if (response.status === 404) {
     notFound()
@@ -194,10 +203,13 @@ export default async function AppointmentPaymentPage({
                 Checkout is available only after the appointment is confirmed.
               </p>
             ) : canPay ? (
-              <Button disabled title="Stripe checkout has not been configured.">
-                <CreditCard />
-                Continue to Stripe checkout
-              </Button>
+              <form action="/api/checkout_sessions" method="POST">
+                <input type="hidden" name="appointmentId" value={id} />
+                <Button type="submit">
+                  <CreditCard />
+                  Continue to Stripe checkout
+                </Button>
+              </form>
             ) : (
               <p role="alert" className="text-sm text-destructive">
                 A valid service price is required before payment can be set up.
