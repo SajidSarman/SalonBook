@@ -30,7 +30,8 @@ export async function POST(request: Request) {
     switch (event.type) {
       case "checkout.session.completed": {
         const session = event.data.object
-        if (session.payment_status === "paid") {
+        // `completed` also fires for delayed methods that are still unpaid.
+        if (session.status === "complete" && session.payment_status === "paid") {
           await fulfillCheckoutSession(session, "paid")
         }
         break

@@ -14,7 +14,9 @@ export type FulfillmentResult = {
 
 /**
  * Records a Checkout Session in the `transactions` collection and marks the
- * related appointment as paid. The Express API owns both writes, keyed by
+ * related appointment as paid. Only the session id is sent: the Express API
+ * retrieves the session from Stripe itself, so the amount, currency and
+ * customer are never taken from the caller. The write is keyed by
  * `stripeSessionId`, so this is safe to call more than once per session.
  */
 export async function fulfillCheckoutSession(
@@ -29,17 +31,10 @@ export async function fulfillCheckoutSession(
     throw new Error("Checkout session is missing appointment metadata.")
   }
 
-  const amount = Number(((session.amount_total ?? 0) / 100).toFixed(2))
-  const currency = (session.currency ?? "bdt").toUpperCase()
-
   const response = await proxyToExpress("/transactions", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
-      appointmentId,
-      customerId,
-      amount,
-      currency,
       stripeSessionId: session.id,
       status,
     }),
@@ -49,6 +44,20 @@ export async function fulfillCheckoutSession(
     const message = await response.text()
     throw new Error(`Could not save the transaction: ${message}`)
   }
+
+  const payload: unknown = await response.json().catch(() => null)
+  const body =
+    typeof payload === "object" && payload !== null
+      ? (payload as Record<string, unknown>)
+      : {}
+
+  console.log("Transaction fulfillment:", {
+    stripeSessionId: session.id,
+    status,
+    success: body.success !== false,
+    message:
+      typeof body.message === "string" ? body.message : "Transaction saved",
+  })
 
   return { appointmentId, customerId, status }
 }

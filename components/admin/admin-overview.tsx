@@ -103,13 +103,26 @@ export function AdminOverview() {
         <article className="rounded-2xl border bg-card p-5">
           <p className="text-sm text-muted-foreground">Successful payments</p>
           <p className="mt-2 text-xl font-semibold">
-            {overview?.successfulPayments == null
-              ? "Not configured"
-              : overview.successfulPayments.toLocaleString()}
+            {overview === null
+              ? "—"
+              : overview.successfulPayments === null
+                ? "Not configured"
+                : overview.successfulPayments.toLocaleString()}
           </p>
-          <p className="mt-1 text-xs text-muted-foreground">
-            Payment integration is pending.
-          </p>
+          {overview === null ? (
+            !error && (
+              <span
+                className="mt-1 block h-4 w-40 animate-pulse rounded bg-muted"
+                aria-hidden="true"
+              />
+            )
+          ) : (
+            <p className="mt-1 text-xs text-muted-foreground">
+              {overview.successfulPayments === null
+                ? "Payment integration is pending."
+                : "Paid Stripe transactions."}
+            </p>
+          )}
         </article>
       </div>
     </section>

@@ -39,7 +39,32 @@ export default async function CheckoutSuccessPage({
         checkoutSession.metadata?.appointmentId === id &&
         checkoutSession.metadata?.customerId === session.user.id
 
-      if (belongsToCustomer && checkoutSession.payment_status === "paid") {
+      const verified =
+        belongsToCustomer &&
+        checkoutSession.status === "complete" &&
+        checkoutSession.payment_status === "paid"
+
+      const reason = !belongsToCustomer
+        ? "session does not belong to this customer or appointment"
+        : checkoutSession.status !== "complete"
+          ? `checkout status is ${checkoutSession.status}`
+          : checkoutSession.payment_status !== "paid"
+            ? `payment status is ${checkoutSession.payment_status}`
+            : "ok"
+
+      console.log("Stripe checkout session verification:", {
+        appointmentId: id,
+        sessionId,
+        verified,
+        reason,
+        status: checkoutSession.status,
+        paymentStatus: checkoutSession.payment_status,
+        belongsToCustomer,
+        amountTotal: checkoutSession.amount_total,
+        currency: checkoutSession.currency,
+      })
+
+      if (verified) {
         paid = true
         amountTotal = checkoutSession.amount_total
 
