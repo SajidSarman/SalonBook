@@ -73,7 +73,15 @@ export function Navbar() {
     href === "/" ? pathname === "/" : pathname.startsWith(href)
 
   const handleSignOut = async () => {
-    await authClient.signOut()
+    const { error } = await authClient.signOut()
+
+    if (error) {
+      console.error("Could not sign out:", error)
+      return
+    }
+
+    router.replace("/")
+    router.refresh()
   }
 
   return (
