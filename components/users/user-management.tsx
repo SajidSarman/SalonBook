@@ -4,6 +4,7 @@ import * as React from "react"
 import { Ban, CircleCheck, Users } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
+import { useToast } from "@/components/ui/use-toast"
 
 type UserRecord = {
   id: string
@@ -47,11 +48,10 @@ function parseUsers(value: unknown): UserRecord[] {
 }
 
 export function UserManagement() {
+  const { success, error: showError } = useToast()
   const [users, setUsers] = React.useState<UserRecord[]>([])
   const [loading, setLoading] = React.useState(true)
   const [busyId, setBusyId] = React.useState<string | null>(null)
-  const [error, setError] = React.useState<string | null>(null)
-  const [notice, setNotice] = React.useState<string | null>(null)
 
   React.useEffect(() => {
     let active = true
@@ -80,7 +80,8 @@ export function UserManagement() {
         }
       } catch (requestError) {
         if (active) {
-          setError(
+          showError(
+            "Could not load users",
             requestError instanceof Error
               ? requestError.message
               : "Could not load users."
@@ -97,12 +98,10 @@ export function UserManagement() {
     return () => {
       active = false
     }
-  }, [])
+  }, [showError])
 
   async function setBlocked(user: UserRecord, isBlocked: boolean) {
     setBusyId(user.id)
-    setError(null)
-    setNotice(null)
 
     try {
       const response = await fetch(
@@ -131,11 +130,12 @@ export function UserManagement() {
           item.id === user.id ? { ...item, isBlocked } : item
         )
       )
-      setNotice(
+      success(
         `${user.name || user.email} ${isBlocked ? "blocked" : "unblocked"}.`
       )
     } catch (requestError) {
-      setError(
+      showError(
+        "Could not update user",
         requestError instanceof Error
           ? requestError.message
           : "Could not update user."
@@ -152,19 +152,6 @@ export function UserManagement() {
         <h2 className="font-heading text-2xl font-semibold">Users</h2>
       </div>
 
-      {error && (
-        <p
-          role="alert"
-          className="mb-4 rounded-xl bg-destructive/10 p-4 text-sm text-destructive"
-        >
-          {error}
-        </p>
-      )}
-      {notice && (
-        <p role="status" className="mb-4 rounded-xl bg-muted p-4 text-sm">
-          {notice}
-        </p>
-      )}
 
       {loading ? (
         <p className="text-sm text-muted-foreground">Loading users…</p>
