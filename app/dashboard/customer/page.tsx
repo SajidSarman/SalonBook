@@ -14,7 +14,12 @@ export default async function CustomerDashboardPage() {
         Welcome back, {session.user.name}.
       </p>
       <AppointmentManagement role="customer" />
-      <ProfileManagement name={session.user.name} email={session.user.email} />
+      <ProfileManagement
+        name={session.user.name}
+        email={session.user.email}
+        image={session.user.image}
+        phone={session.user.phone}
+      />
     </div>
   )
 }

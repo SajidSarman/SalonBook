@@ -26,6 +26,13 @@ export const auth = betterAuth({
         defaultValue: false,
         input: false,
       },
+      // Self-service profile field. `input: true` lets `updateUser` change it;
+      // `role` and `isBlocked` above stay read-only for every client.
+      phone: {
+        type: "string",
+        required: false,
+        input: true,
+      },
     },
   },
   socialProviders: {

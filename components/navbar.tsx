@@ -12,7 +12,7 @@ import {
   X,
 } from "lucide-react"
 
-import { Avatar, AvatarFallback } from "@/components/ui/avatar"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { buttonVariants } from "@/components/ui/button"
 import {
   DropdownMenu,
@@ -121,6 +121,9 @@ export function Navbar() {
             <DropdownMenu>
               <DropdownMenuTrigger className="flex items-center gap-2 rounded-full outline-none focus-visible:ring-2 focus-visible:ring-ring">
                 <Avatar size="sm">
+                  {user.image && (
+                    <AvatarImage src={user.image} alt="" />
+                  )}
                   <AvatarFallback>{initialsFor(user.name || "User")}</AvatarFallback>
                 </Avatar>
                 <span className="hidden max-w-32 truncate text-sm font-medium sm:block">

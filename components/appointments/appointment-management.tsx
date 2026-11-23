@@ -5,7 +5,9 @@ import Image from "next/image"
 import Link from "next/link"
 import { CalendarClock, CreditCard } from "lucide-react"
 
+import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
+import { cn } from "@/lib/utils"
 
 type AppointmentStatus = "Pending" | "Confirmed" | "Cancelled"
 type ManagementRole = "customer" | "admin"
@@ -25,6 +27,35 @@ type Appointment = {
   status: AppointmentStatus
   paymentStatus: "Unpaid" | "Paid"
 }
+
+const statusSections: {
+  status: AppointmentStatus
+  description: string
+  dot: string
+  badge: string
+}[] = [
+  {
+    status: "Pending",
+    description: "Waiting for confirmation",
+    dot: "bg-amber-500",
+    badge:
+      "border-amber-200 bg-amber-100 text-amber-900 dark:border-amber-400/30 dark:bg-amber-400/15 dark:text-amber-200",
+  },
+  {
+    status: "Confirmed",
+    description: "Scheduled and confirmed",
+    dot: "bg-emerald-500",
+    badge:
+      "border-emerald-200 bg-emerald-100 text-emerald-900 dark:border-emerald-400/30 dark:bg-emerald-400/15 dark:text-emerald-200",
+  },
+  {
+    status: "Cancelled",
+    description: "No longer active",
+    dot: "bg-rose-500",
+    badge:
+      "border-rose-200 bg-rose-100 text-rose-900 dark:border-rose-400/30 dark:bg-rose-400/15 dark:text-rose-200",
+  },
+]
 
 function parseAppointments(value: unknown): Appointment[] {
   if (!Array.isArray(value)) {
@@ -114,6 +145,176 @@ function displayTime(value: string) {
     hour: "numeric",
     minute: "2-digit",
   }).format(date)
+}
+
+function formatPrice(value: number) {
+  return new Intl.NumberFormat("en-BD", {
+    style: "currency",
+    currency: "BDT",
+    maximumFractionDigits: 2,
+  }).format(value)
+}
+
+function AppointmentCard({
+  appointment,
+  role,
+  busy,
+  onUpdate,
+}: {
+  appointment: Appointment
+  role: ManagementRole
+  busy: boolean
+  onUpdate: (status: "Confirmed" | "Cancelled") => void
+}) {
+  const statusStyle =
+    statusSections.find((section) => section.status === appointment.status) ??
+    statusSections[0]
+
+  return (
+    <article className="rounded-2xl border bg-card p-5 sm:p-6">
+      <div className="flex flex-wrap items-start justify-between gap-4">
+        <div className="flex min-w-0 items-start gap-4">
+          <Image
+            src={appointment.serviceImage || "/auth-image.jpg"}
+            alt={appointment.serviceName}
+            width={96}
+            height={96}
+            unoptimized
+            className="size-20 shrink-0 rounded-xl object-cover sm:size-24"
+          />
+          <div className="min-w-0">
+            <h3 className="font-heading text-lg font-semibold">
+              {appointment.serviceName}
+            </h3>
+            {appointment.serviceCategory && (
+              <p className="mt-1 text-sm text-muted-foreground">
+                {appointment.serviceCategory}
+              </p>
+            )}
+            {appointment.servicePrice !== null && (
+              <p className="mt-1 text-sm font-medium">
+                Service price: {formatPrice(appointment.servicePrice)}
+              </p>
+            )}
+            <p className="mt-1 text-sm text-muted-foreground">
+              {new Date(
+                `${appointment.appointmentDate}T00:00:00`
+              ).toLocaleDateString()}{" "}
+              · {displayTime(appointment.timeSlot)}
+            </p>
+            {appointment.createdAt && (
+              <p className="mt-1 text-sm text-muted-foreground">
+                Booking requested:{" "}
+                {new Date(appointment.createdAt).toLocaleString()}
+              </p>
+            )}
+            {role === "admin" && (
+              <p className="mt-2 text-sm text-muted-foreground">
+                {appointment.customerName} · {appointment.customerEmail}
+              </p>
+            )}
+            {appointment.additionalMessage && (
+              <p className="mt-3 text-sm">“{appointment.additionalMessage}”</p>
+            )}
+          </div>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          <Badge variant="outline" className={statusStyle.badge}>
+            <span
+              aria-hidden="true"
+              className={cn("size-1.5 rounded-full", statusStyle.dot)}
+            />
+            {appointment.status}
+          </Badge>
+          <Badge
+            variant="outline"
+            className={cn(
+              appointment.paymentStatus === "Paid" &&
+                "border-emerald-200 bg-emerald-100 text-emerald-900 dark:border-emerald-400/30 dark:bg-emerald-400/15 dark:text-emerald-200"
+            )}
+          >
+            Payment: {appointment.paymentStatus}
+          </Badge>
+        </div>
+      </div>
+
+      {role === "admin" && appointment.status === "Pending" && (
+        <div className="mt-5 flex gap-2 border-t pt-4">
+          <Button size="sm" disabled={busy} onClick={() => onUpdate("Confirmed")}>
+            Confirm
+          </Button>
+          <Button
+            size="sm"
+            variant="outline"
+            disabled={busy}
+            onClick={() => onUpdate("Cancelled")}
+          >
+            Cancel
+          </Button>
+        </div>
+      )}
+      {role === "admin" && appointment.status === "Confirmed" && (
+        <div className="mt-5 border-t pt-4">
+          <Button
+            size="sm"
+            variant="outline"
+            disabled={busy}
+            onClick={() => onUpdate("Cancelled")}
+          >
+            Cancel appointment
+          </Button>
+        </div>
+      )}
+      {role === "customer" && appointment.status === "Pending" && (
+        <div className="mt-5 border-t pt-4">
+          <Button
+            size="sm"
+            variant="outline"
+            disabled={busy}
+            onClick={() => onUpdate("Cancelled")}
+          >
+            Cancel request
+          </Button>
+        </div>
+      )}
+      {role === "customer" &&
+        appointment.status === "Confirmed" &&
+        appointment.paymentStatus === "Unpaid" && (
+          <div className="mt-5 border-t pt-4">
+            <Button
+              render={
+                <Link
+                  href={`/dashboard/customer/appointments/${encodeURIComponent(appointment.id)}/checkout`}
+                />
+              }
+              nativeButton={false}
+              size="sm"
+            >
+              <CreditCard />
+              Pay for appointment
+            </Button>
+          </div>
+        )}
+      {role === "customer" && appointment.status === "Pending" && (
+        <div className="mt-5 border-t pt-4">
+          <Button size="sm" disabled>
+            <CreditCard />
+            Pay after confirmation
+          </Button>
+          <p className="mt-2 text-xs text-muted-foreground">
+            Payment becomes available after an admin confirms this appointment.
+          </p>
+        </div>
+      )}
+      {role === "customer" &&
+        appointment.status === "Confirmed" &&
+        appointment.paymentStatus === "Paid" && (
+          <p className="mt-5 border-t pt-4 text-sm text-muted-foreground">
+            Payment completed.
+          </p>
+        )}
+    </article>
+  )
 }
 
 export function AppointmentManagement({ role }: { role: ManagementRole }) {
@@ -293,166 +494,54 @@ export function AppointmentManagement({ role }: { role: ManagementRole }) {
             No appointment requests yet.
           </p>
         ) : (
-          <div className="grid gap-4">
-            {appointments.map((appointment) => (
-              <article
-                key={appointment.id}
-                className="rounded-2xl border bg-card p-5 sm:p-6"
-              >
-                <div className="flex flex-wrap items-start justify-between gap-4">
-                  <div className="flex min-w-0 items-start gap-4">
-                    <Image
-                      src={appointment.serviceImage || "/auth-image.jpg"}
-                      alt={appointment.serviceName}
-                      width={96}
-                      height={96}
-                      unoptimized
-                      className="size-20 shrink-0 rounded-xl object-cover sm:size-24"
-                    />
-                    <div className="min-w-0">
-                      <h3 className="font-heading text-lg font-semibold">
-                        {appointment.serviceName}
-                      </h3>
-                      {appointment.serviceCategory && (
-                        <p className="mt-1 text-sm text-muted-foreground">
-                          {appointment.serviceCategory}
-                        </p>
-                      )}
-                      {appointment.servicePrice !== null && (
-                        <p className="mt-1 text-sm font-medium">
-                          Service price:{" "}
-                          {new Intl.NumberFormat("en-BD", {
-                            style: "currency",
-                            currency: "BDT",
-                            maximumFractionDigits: 2,
-                          }).format(appointment.servicePrice)}
-                        </p>
-                      )}
-                      <p className="mt-1 text-sm text-muted-foreground">
-                        {new Date(
-                          `${appointment.appointmentDate}T00:00:00`
-                        ).toLocaleDateString()}{" "}
-                        · {displayTime(appointment.timeSlot)}
-                      </p>
-                      {appointment.createdAt && (
-                        <p className="mt-1 text-sm text-muted-foreground">
-                          Booking requested:{" "}
-                          {new Date(appointment.createdAt).toLocaleString()}
-                        </p>
-                      )}
-                      {role === "admin" && (
-                        <p className="mt-2 text-sm text-muted-foreground">
-                          {appointment.customerName} ·{" "}
-                          {appointment.customerEmail}
-                        </p>
-                      )}
-                      {appointment.additionalMessage && (
-                        <p className="mt-3 text-sm">
-                          “{appointment.additionalMessage}”
-                        </p>
-                      )}
-                    </div>
-                  </div>
-                  <div className="flex flex-wrap gap-2 text-xs">
-                    <span className="rounded-full bg-muted px-3 py-1">
-                      {appointment.status}
-                    </span>
-                    <span className="rounded-full bg-muted px-3 py-1">
-                      Payment: {appointment.paymentStatus}
-                    </span>
-                  </div>
-                </div>
+          <div className="grid gap-10">
+            {statusSections.map(({ status, description, dot, badge }) => {
+              const items = appointments.filter(
+                (appointment) => appointment.status === status
+              )
 
-                {role === "admin" && appointment.status === "Pending" && (
-                  <div className="mt-5 flex gap-2 border-t pt-4">
-                    <Button
-                      size="sm"
-                      disabled={busyId === appointment.id}
-                      onClick={() =>
-                        void updateAppointment(appointment, "Confirmed")
-                      }
+              if (items.length === 0) return null
+
+              return (
+                <section
+                  key={status}
+                  aria-labelledby={`appointments-${status.toLowerCase()}`}
+                  className="scroll-mt-24"
+                >
+                  <div className="mb-3 flex flex-wrap items-center gap-3">
+                    <span
+                      aria-hidden="true"
+                      className={cn("size-2.5 rounded-full", dot)}
+                    />
+                    <h3
+                      id={`appointments-${status.toLowerCase()}`}
+                      className="font-heading text-lg font-semibold"
                     >
-                      Confirm
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      disabled={busyId === appointment.id}
-                      onClick={() =>
-                        void updateAppointment(appointment, "Cancelled")
-                      }
-                    >
-                      Cancel
-                    </Button>
+                      {status}
+                    </h3>
+                    <Badge variant="outline" className={badge}>
+                      {items.length}
+                    </Badge>
+                    <span className="text-sm text-muted-foreground">
+                      {description}
+                    </span>
                   </div>
-                )}
-                {role === "admin" && appointment.status === "Confirmed" && (
-                  <div className="mt-5 border-t pt-4">
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      disabled={busyId === appointment.id}
-                      onClick={() =>
-                        void updateAppointment(appointment, "Cancelled")
-                      }
-                    >
-                      Cancel appointment
-                    </Button>
-                  </div>
-                )}
-                {role === "customer" && appointment.status === "Pending" && (
-                  <div className="mt-5 border-t pt-4">
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      disabled={busyId === appointment.id}
-                      onClick={() =>
-                        void updateAppointment(appointment, "Cancelled")
-                      }
-                    >
-                      Cancel request
-                    </Button>
-                  </div>
-                )}
-                {role === "customer" &&
-                  appointment.status === "Confirmed" &&
-                  appointment.paymentStatus === "Unpaid" && (
-                    <div className="mt-5 border-t pt-4">
-                      <Button
-                        render={
-                          <Link
-                            href={`/dashboard/customer/appointments/${encodeURIComponent(appointment.id)}/checkout`}
-                          />
+                  <div className="grid gap-4">
+                    {items.map((appointment) => (
+                      <AppointmentCard
+                        key={appointment.id}
+                        appointment={appointment}
+                        role={role}
+                        busy={busyId === appointment.id}
+                        onUpdate={(nextStatus) =>
+                          void updateAppointment(appointment, nextStatus)
                         }
-                        nativeButton={false}
-                        size="sm"
-                      >
-                        <CreditCard />
-                        Pay for appointment
-                      </Button>
-                    </div>
-                  )}
-                {role === "customer" && appointment.status === "Pending" && (
-                  <div className="mt-5 border-t pt-4">
-                    <Button size="sm" disabled>
-                      <CreditCard />
-                      Pay after confirmation
-                    </Button>
-                    <p className="mt-2 text-xs text-muted-foreground">
-                      Payment becomes available after an admin confirms this
-                      appointment.
-                    </p>
+                      />
+                    ))}
                   </div>
-                )}
-                {role === "customer" &&
-                  appointment.status === "Confirmed" &&
-                  appointment.paymentStatus === "Paid" && (
-                    <p className="mt-5 border-t pt-4 text-sm text-muted-foreground">
-                      Payment completed.
-                    </p>
-                  )}
-              </article>
-            ))}
+                </section>
+              )
+            })}
           </div>
         )}
       </section>

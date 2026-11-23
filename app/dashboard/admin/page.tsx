@@ -3,6 +3,7 @@ import { AdminOverview } from "@/components/admin/admin-overview"
 import { ServiceManagement } from "@/components/admin/service-management"
 import { TransactionManagement } from "@/components/admin/transaction-management"
 import { AppointmentManagement } from "@/components/appointments/appointment-management"
+import { ProfileManagement } from "@/components/dashboard/profile-management"
 import { UserManagement } from "@/components/users/user-management"
 
 export default async function AdminDashboardPage() {
@@ -17,6 +18,12 @@ export default async function AdminDashboardPage() {
       <AppointmentManagement role="admin" />
       <UserManagement />
       <TransactionManagement />
+      <ProfileManagement
+        name={session.user.name}
+        email={session.user.email}
+        image={session.user.image}
+        phone={session.user.phone}
+      />
     </div>
   )
 }
