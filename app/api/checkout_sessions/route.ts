@@ -28,7 +28,7 @@ export async function POST(request: Request) {
     }
 
     const appointmentResponse = await proxyToExpress(
-      `/appointments/${encodeURIComponent(appointmentId)}?customerId=${encodeURIComponent(authSession.user.id)}`
+      `/appointments/${encodeURIComponent(appointmentId)}`
     )
 
     if (appointmentResponse.status === 404) {

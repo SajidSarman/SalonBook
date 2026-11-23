@@ -24,7 +24,5 @@ export async function PATCH(
   const { id } = await params
   return proxyToExpress(`/appointments/${encodeURIComponent(id)}/cancel`, {
     method: "PATCH",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ customerId: session.user.id }),
   })
 }

@@ -11,5 +11,9 @@ export async function GET(request: Request) {
     )
   }
 
-  return proxyToExpress(`/appointment-slots?date=${encodeURIComponent(date)}`)
+  return proxyToExpress(
+    `/appointment-slots?date=${encodeURIComponent(date)}`,
+    undefined,
+    { auth: "public" }
+  )
 }

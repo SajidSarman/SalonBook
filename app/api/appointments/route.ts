@@ -19,9 +19,7 @@ export async function GET() {
     )
   }
 
-  return proxyToExpress(
-    `/appointments?customerId=${encodeURIComponent(session.user.id)}`
-  )
+  return proxyToExpress("/appointments")
 }
 
 export async function POST(request: Request) {
@@ -93,11 +91,6 @@ export async function POST(request: Request) {
       appointmentDate,
       timeSlot,
       additionalMessage: additionalMessage ?? "",
-      customer: {
-        id: session.user.id,
-        name: session.user.name,
-        email: session.user.email,
-      },
     }),
   })
 }

@@ -31,14 +31,18 @@ export async function fulfillCheckoutSession(
     throw new Error("Checkout session is missing appointment metadata.")
   }
 
-  const response = await proxyToExpress("/transactions", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      stripeSessionId: session.id,
-      status,
-    }),
-  })
+  const response = await proxyToExpress(
+    "/transactions",
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        stripeSessionId: session.id,
+        status,
+      }),
+    },
+    { auth: "service" }
+  )
 
   if (!response.ok) {
     const message = await response.text()

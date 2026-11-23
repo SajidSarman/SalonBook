@@ -20,7 +20,5 @@ export async function GET(
   }
 
   const { id } = await params
-  return proxyToExpress(
-    `/appointments/${encodeURIComponent(id)}?customerId=${encodeURIComponent(session.user.id)}`
-  )
+  return proxyToExpress(`/appointments/${encodeURIComponent(id)}`)
 }
