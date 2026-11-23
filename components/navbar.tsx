@@ -64,7 +64,7 @@ export function Navbar() {
   const links: NavLink[] = user
     ? [
         { href: "/", label: "Home" },
-        { href: "/salons/1", label: "Salon Details" },
+        { href: "/services", label: "Browse Services" },
         { href: dashboardHref, label: "Dashboard" },
       ]
     : publicLinks
