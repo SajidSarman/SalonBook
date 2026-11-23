@@ -4,6 +4,7 @@ import * as React from "react"
 import { ReceiptText } from "lucide-react"
 
 import { cn } from "@/lib/utils"
+import { useToast } from "@/components/ui/use-toast"
 
 type TransactionRecord = {
   id: string
@@ -117,9 +118,9 @@ function shorten(value: string | null, length = 10) {
 }
 
 export function TransactionManagement() {
+  const { error: showError } = useToast()
   const [transactions, setTransactions] = React.useState<TransactionRecord[]>([])
   const [loading, setLoading] = React.useState(true)
-  const [error, setError] = React.useState<string | null>(null)
 
   React.useEffect(() => {
     let active = true
@@ -148,7 +149,8 @@ export function TransactionManagement() {
         }
       } catch (requestError) {
         if (active) {
-          setError(
+          showError(
+            "Could not load transactions",
             requestError instanceof Error
               ? requestError.message
               : "Could not load transactions."
@@ -165,7 +167,7 @@ export function TransactionManagement() {
     return () => {
       active = false
     }
-  }, [])
+  }, [showError])
 
   const paidCount = transactions.filter(
     (transaction) => transaction.status === "paid"
@@ -177,15 +179,6 @@ export function TransactionManagement() {
         <ReceiptText className="size-5" />
         <h2 className="font-heading text-2xl font-semibold">Transactions</h2>
       </div>
-
-      {error && (
-        <p
-          role="alert"
-          className="mb-4 rounded-xl bg-destructive/10 p-4 text-sm text-destructive"
-        >
-          {error}
-        </p>
-      )}
 
       {loading ? (
         <p className="text-sm text-muted-foreground">Loading transactions…</p>

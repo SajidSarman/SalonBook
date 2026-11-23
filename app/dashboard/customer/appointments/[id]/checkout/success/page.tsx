@@ -2,6 +2,7 @@ import Link from "next/link"
 import { AlertCircle, CheckCircle2 } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
+import { PaymentToast } from "@/components/ui/payment-toast"
 import {
   displayAppointmentTime,
   parseAppointment,
@@ -105,6 +106,15 @@ export default async function CheckoutSuccessPage({
 
   return (
     <div className="mx-auto flex w-full max-w-xl flex-col items-center py-12 text-center">
+      <PaymentToast
+        type={paid ? "success" : "error"}
+        title={paid ? "Payment successful" : "Payment not confirmed"}
+        description={
+          paid
+            ? "Thank you. Your payment has been received and your appointment is confirmed."
+            : "We couldn't confirm this payment. If you were charged, it may take a moment to appear. Please check your appointments or try again."
+        }
+      />
       {paid ? (
         <CheckCircle2 className="size-14 text-emerald-600" aria-hidden="true" />
       ) : (

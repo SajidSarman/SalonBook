@@ -8,6 +8,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import { authClient } from "@/lib/auth-client"
 import { isHttpImageUrl, uploadImage } from "@/lib/upload-image"
+import { useToast } from "@/components/ui/use-toast"
 
 function initialsFor(name: string) {
   return (
@@ -34,6 +35,7 @@ export function ProfileManagement({
   phone?: string | null
 }) {
   const router = useRouter()
+  const { success, error: showError } = useToast()
   const fileInputRef = React.useRef<HTMLInputElement>(null)
   const [displayName, setDisplayName] = React.useState(name)
   const [phoneNumber, setPhoneNumber] = React.useState(phone ?? "")
@@ -42,7 +44,6 @@ export function ProfileManagement({
   const [uploading, setUploading] = React.useState(false)
   const [saving, setSaving] = React.useState(false)
   const [error, setError] = React.useState<string | null>(null)
-  const [notice, setNotice] = React.useState<string | null>(null)
 
   async function handleFile(event: React.ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0]
@@ -52,14 +53,14 @@ export function ProfileManagement({
 
     setUploading(true)
     setError(null)
-    setNotice(null)
 
     try {
       const url = await uploadImage(file, "profile")
       setAvatar(url)
-      setNotice("Image uploaded. Save your profile to apply it.")
+      success("Image uploaded. Save your profile to apply it.")
     } catch (uploadError) {
-      setError(
+      showError(
+        "Could not upload image",
         uploadError instanceof Error
           ? uploadError.message
           : "Could not upload the image."
@@ -73,52 +74,53 @@ export function ProfileManagement({
     const value = imageUrlDraft.trim()
 
     if (!value) {
-      setError("Paste an image URL first.")
+      showError("Missing image URL", "Paste an image URL first.")
       return
     }
 
     if (!isHttpImageUrl(value)) {
-      setError("Enter a valid http(s) image URL.")
+      showError("Invalid image URL", "Enter a valid http(s) image URL.")
       return
     }
 
     setAvatar(value)
     setImageUrlDraft("")
-    setError(null)
-    setNotice("Image URL added. Save your profile to apply it.")
+    success("Image URL added. Save your profile to apply it.")
   }
 
   async function updateProfile(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
     setSaving(true)
     setError(null)
-    setNotice(null)
 
     const trimmedPhone = phoneNumber.trim()
 
     if (trimmedPhone && !/^[+()\d\s-]{5,20}$/.test(trimmedPhone)) {
       setSaving(false)
-      setError("Enter a valid phone number (5–20 digits).")
+      showError("Invalid phone number", "Enter a valid phone number (5–20 digits).")
       return
     }
 
     try {
       // Only self-service fields are sent. `role` and `isBlocked` are declared
       // with `input: false` in the auth config, so Better Auth rejects them.
-      const result = await authClient.updateUser({
-        name: displayName.trim(),
-        image: avatar.trim(),
-        phone: trimmedPhone,
-      })
+      const result = await authClient.updateUser(
+        {
+          name: displayName.trim(),
+          image: avatar.trim(),
+          phone: trimmedPhone,
+        } as Parameters<typeof authClient.updateUser>[0]
+      )
       if (result.error) {
         throw new Error(
           result.error.message || "Could not update your profile."
         )
       }
-      setNotice("Profile updated.")
+      success("Profile updated.")
       router.refresh()
     } catch (requestError) {
-      setError(
+      showError(
+        "Could not update profile",
         requestError instanceof Error
           ? requestError.message
           : "Could not update your profile."
@@ -141,17 +143,9 @@ export function ProfileManagement({
         My Profile
       </h2>
       {error && (
-        <p
-          role="alert"
-          className="mb-4 rounded-xl bg-destructive/10 p-4 text-sm text-destructive"
-        >
-          {error}
-        </p>
-      )}
-      {notice && (
-        <p role="status" className="mb-4 rounded-xl bg-muted p-4 text-sm">
-          {notice}
-        </p>
+        <>
+          {showError("Error", error)}
+        </>
       )}
       <form
         onSubmit={(event) => void updateProfile(event)}
@@ -190,7 +184,6 @@ export function ProfileManagement({
                 disabled={uploading || saving}
                 onClick={() => {
                   setAvatar("")
-                  setNotice(null)
                 }}
               >
                 <Trash2 />

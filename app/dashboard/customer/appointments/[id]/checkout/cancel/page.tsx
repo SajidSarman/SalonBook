@@ -2,6 +2,7 @@ import Link from "next/link"
 import { XCircle } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
+import { PaymentToast } from "@/components/ui/payment-toast"
 import { requireRole } from "@/lib/auth-guard"
 
 export default async function CheckoutCancelPage({
@@ -14,6 +15,11 @@ export default async function CheckoutCancelPage({
 
   return (
     <div className="mx-auto flex w-full max-w-xl flex-col items-center py-12 text-center">
+      <PaymentToast
+        type="error"
+        title="Payment canceled"
+        description="Your payment was not completed and you have not been charged."
+      />
       <XCircle className="size-14 text-muted-foreground" aria-hidden="true" />
       <h1 className="mt-5 font-heading text-3xl font-semibold">
         Payment canceled

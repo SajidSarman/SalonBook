@@ -8,6 +8,7 @@ import { CalendarClock, CreditCard } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
+import { useToast } from "@/components/ui/use-toast"
 
 type AppointmentStatus = "Pending" | "Confirmed" | "Cancelled"
 type ManagementRole = "customer" | "admin"
@@ -318,11 +319,11 @@ function AppointmentCard({
 }
 
 export function AppointmentManagement({ role }: { role: ManagementRole }) {
+  const { success, error: showError } = useToast()
   const [appointments, setAppointments] = React.useState<Appointment[]>([])
   const [loading, setLoading] = React.useState(true)
   const [busyId, setBusyId] = React.useState<string | null>(null)
   const [error, setError] = React.useState<string | null>(null)
-  const [notice, setNotice] = React.useState<string | null>(null)
 
   const endpoint =
     role === "admin" ? "/api/admin/appointments" : "/api/appointments"
@@ -367,7 +368,8 @@ export function AppointmentManagement({ role }: { role: ManagementRole }) {
         }
       } catch (requestError) {
         if (active) {
-          setError(
+          showError(
+            "Could not load appointments",
             requestError instanceof Error
               ? requestError.message
               : "Could not load appointments."
@@ -384,7 +386,7 @@ export function AppointmentManagement({ role }: { role: ManagementRole }) {
     return () => {
       active = false
     }
-  }, [endpoint])
+  }, [endpoint, showError])
 
   async function updateAppointment(
     appointment: Appointment,
@@ -392,7 +394,6 @@ export function AppointmentManagement({ role }: { role: ManagementRole }) {
   ) {
     setBusyId(appointment.id)
     setError(null)
-    setNotice(null)
 
     try {
       const response = await fetch(
@@ -423,13 +424,14 @@ export function AppointmentManagement({ role }: { role: ManagementRole }) {
           item.id === appointment.id ? { ...item, status } : item
         )
       )
-      setNotice(
+      success(
         status === "Confirmed"
           ? "Appointment confirmed."
           : "Appointment cancelled."
       )
     } catch (requestError) {
-      setError(
+      showError(
+        "Could not update appointment",
         requestError instanceof Error
           ? requestError.message
           : "Could not update appointment."
@@ -474,17 +476,9 @@ export function AppointmentManagement({ role }: { role: ManagementRole }) {
         </div>
 
         {error && (
-          <p
-            role="alert"
-            className="mb-4 rounded-xl bg-destructive/10 p-4 text-sm text-destructive"
-          >
-            {error}
-          </p>
-        )}
-        {notice && (
-          <p role="status" className="mb-4 rounded-xl bg-muted p-4 text-sm">
-            {notice}
-          </p>
+          <>
+            {showError("Error", error)}
+          </>
         )}
 
         {loading ? (

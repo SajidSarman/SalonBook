@@ -22,6 +22,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import { uploadImage } from "@/lib/upload-image"
+import { useToast } from "@/components/ui/use-toast"
 
 type ServiceStatus = "active" | "inactive"
 type Service = {
@@ -105,17 +106,18 @@ function errorMessage(value: unknown, fallback: string) {
 }
 
 export function ServiceManagement() {
+  const { success, error: showError } = useToast()
   const [services, setServices] = React.useState<Service[]>([])
   const [draft, setDraft] = React.useState<Draft>(emptyDraft)
   const [editingId, setEditingId] = React.useState<string | null>(null)
   const [dialogOpen, setDialogOpen] = React.useState(false)
+  const [confirmDeleteId, setConfirmDeleteId] = React.useState<string | null>(null)
   const [search, setSearch] = React.useState("")
   const [sortOrder, setSortOrder] = React.useState<SortOrder>("newest")
   const [loading, setLoading] = React.useState(true)
   const [uploading, setUploading] = React.useState(false)
   const [saving, setSaving] = React.useState(false)
   const [error, setError] = React.useState<string | null>(null)
-  const [notice, setNotice] = React.useState<string | null>(null)
   const fileInputRef = React.useRef<HTMLInputElement>(null)
 
   const loadServices = React.useCallback(async () => {
@@ -134,7 +136,8 @@ export function ServiceManagement() {
         await loadServices()
       } catch (requestError) {
         if (active) {
-          setError(
+          showError(
+            "Could not load services",
             requestError instanceof Error
               ? requestError.message
               : "Could not load services."
@@ -148,7 +151,7 @@ export function ServiceManagement() {
     return () => {
       active = false
     }
-  }, [loadServices])
+  }, [loadServices, showError])
 
   const visibleServices = React.useMemo(() => {
     const query = search.trim().toLocaleLowerCase()
@@ -177,7 +180,6 @@ export function ServiceManagement() {
     setEditingId(null)
     setDraft(emptyDraft)
     setError(null)
-    setNotice(null)
     setDialogOpen(true)
   }
 
@@ -193,7 +195,6 @@ export function ServiceManagement() {
       status: service.status,
     })
     setError(null)
-    setNotice(null)
     setDialogOpen(true)
   }
 
@@ -229,7 +230,6 @@ export function ServiceManagement() {
     event.preventDefault()
     setSaving(true)
     setError(null)
-    setNotice(null)
 
     const payload = {
       serviceName: draft.serviceName.trim(),
@@ -260,9 +260,10 @@ export function ServiceManagement() {
       setDialogOpen(false)
       setEditingId(null)
       setDraft(emptyDraft)
-      setNotice(editingId ? "Service updated." : "Service created.")
+      success(editingId ? "Service updated." : "Service created.")
     } catch (requestError) {
-      setError(
+      showError(
+        "Could not save service",
         requestError instanceof Error
           ? requestError.message
           : "Could not save service."
@@ -273,9 +274,16 @@ export function ServiceManagement() {
   }
 
   async function deleteService(service: Service) {
-    if (!window.confirm(`Delete "${service.serviceName}"?`)) return
+    setConfirmDeleteId(service.id)
+  }
+
+  async function confirmDeleteService() {
+    if (!confirmDeleteId) return
+    const service = services.find((item) => item.id === confirmDeleteId)
+    if (!service) return
+
+    setSaving(true)
     setError(null)
-    setNotice(null)
     try {
       const response = await fetch(
         `/api/admin/services/${encodeURIComponent(service.id)}`,
@@ -286,9 +294,14 @@ export function ServiceManagement() {
         throw new Error(errorMessage(result, "Could not delete service."))
       }
       setServices((current) => current.filter((item) => item.id !== service.id))
-      setNotice("Service deleted.")
+      setConfirmDeleteId(null)
+      setSaving(false)
+      success("Service deleted.")
     } catch (requestError) {
-      setError(
+      setConfirmDeleteId(null)
+      setSaving(false)
+      showError(
+        "Could not delete service",
         requestError instanceof Error
           ? requestError.message
           : "Could not delete service."
@@ -311,18 +324,10 @@ export function ServiceManagement() {
         </Button>
       </div>
 
-      {error && !dialogOpen && (
-        <p
-          role="alert"
-          className="mb-4 rounded-xl bg-destructive/10 p-4 text-sm text-destructive"
-        >
-          {error}
-        </p>
-      )}
-      {notice && !dialogOpen && (
-        <p role="status" className="mb-4 rounded-xl bg-muted p-4 text-sm">
-          {notice}
-        </p>
+      {error && (
+        <>
+          {showError("Error", error)}
+        </>
       )}
 
       <div className="mb-4 grid gap-3 sm:grid-cols-[minmax(0,1fr)_minmax(12rem,0.5fr)]">
@@ -599,6 +604,40 @@ export function ServiceManagement() {
           </form>
         </DialogContent>
       </Dialog>
+
+      {confirmDeleteId && (
+        <Dialog
+          open={confirmDeleteId !== null}
+          onOpenChange={(open) => !open && setConfirmDeleteId(null)}
+        >
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Delete service?</DialogTitle>
+              <DialogDescription>
+                This action cannot be undone.
+              </DialogDescription>
+            </DialogHeader>
+            <DialogFooter>
+              <Button
+                type="button"
+                variant="outline"
+                disabled={saving}
+                onClick={() => setConfirmDeleteId(null)}
+              >
+                Cancel
+              </Button>
+              <Button
+                type="button"
+                variant="destructive"
+                disabled={saving}
+                onClick={confirmDeleteService}
+              >
+                {saving ? "Deleting…" : "Delete"}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      )}
     </section>
   )
 }
